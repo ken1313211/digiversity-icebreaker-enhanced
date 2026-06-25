@@ -962,6 +962,7 @@ async function showPlayerTargetSelector(attackType, attackName, itemIndex, isFro
     }
     
     const myTeam = players[myPlayerId]?.team;
+    const isQueued = currentGameState !== 'question';
     const attacksRefPath = 'queuedAttacks';
 
     const consumeItem = async () => {
@@ -1253,7 +1254,12 @@ function clearSabotageEffectsForNextQuestion() {
     ['view-player-question', 'view-player-dashboard'].forEach(id => {
         document.getElementById(id)?.classList.remove('sabotage-blur', 'sabotage-greyout', 'sabotage-shake', 'sabotage-redacted');
     });
-    document.querySelectorAll('.answer-btn').forEach(button => { button.style.order = ''; });
+    document.querySelectorAll('.answer-btn').forEach(button => {
+        button.style.order = '';
+        button.disabled = false;
+        button.style.pointerEvents = '';
+        button.style.opacity = '';
+    });
     ['emoji-flood-overlay', 'dash-emoji-flood-overlay'].forEach(id => {
         const overlay = document.getElementById(id);
         if (overlay) {
@@ -1367,9 +1373,21 @@ function applySabotageEffect(type, attackerName, attackerTeam, attackerId) {
         startEmojiFloodSabotage();
     } else if (type === 'redacted') {
         qView.classList.add('sabotage-redacted');
+        // Disable answer buttons so player cannot select while question is hidden
+        const answerButtons = document.querySelectorAll('#view-player-question .answer-btn');
+        answerButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.3';
+        });
         const questionCard = document.querySelector('#view-player-question .player-question-card');
         const clearRedaction = () => {
             qView.classList.remove('sabotage-redacted');
+            answerButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.pointerEvents = '';
+                btn.style.opacity = '';
+            });
             questionCard?.removeEventListener('click', clearRedaction);
         };
         questionCard?.addEventListener('click', clearRedaction, { once: true });
