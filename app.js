@@ -1149,13 +1149,13 @@ async function showPlayerTargetSelector(attackType, attackName, itemIndex, isFro
     const targetSearch = document.getElementById('input-target-search');
     if (targetSearch) {
         targetSearch.value = '';
+        targetSearch.blur();
         targetSearch.oninput = () => {
             const query = targetSearch.value.trim().toLowerCase();
             listEl.querySelectorAll('.player-target-option').forEach(button => {
                 button.classList.toggle('hidden', Boolean(query) && !button.dataset.playerName.includes(query));
             });
         };
-        setTimeout(() => targetSearch.focus(), 50);
     }
 }
 
