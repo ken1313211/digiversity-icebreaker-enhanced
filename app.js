@@ -35,6 +35,9 @@ let questionConclusionInProgress = false;
 let currentPlayerConnectionRef = null;
 let playerPresenceUnsubscribe = null;
 const processedAttackIds = new Set();
+let syncedPlayerQuestionStartTime = 0;
+let syncedPlayerQuestionTimeLimit = 20;
+let syncedPlayerQuestionPaused = false;
 
 let customQuizzes = {};
 let makerQuestions = [];
@@ -546,28 +549,24 @@ function switchView(viewId) {
 // Start points decay ticker for player UI
 function startPointsDecayTicker(questionStartTime, timeLimit) {
     clearInterval(pointsDecayInterval);
+    syncedPlayerQuestionStartTime = Number(questionStartTime) || Date.now();
+    syncedPlayerQuestionTimeLimit = Math.max(1, Number(timeLimit) || 20);
     const updateTicker = () => {
         if (hasAnsweredThisRound) {
             clearInterval(pointsDecayInterval);
             return;
         }
-        // Check if game is paused via Firebase state
-        if (currentGamePin && database) {
-            get(ref(database, `sessions/${currentGamePin}/isPaused`)).then(snap => {
-                if (snap.val() === true) return; // Don't decay while paused
-                const adjustedStart = questionStartTime;
-                const timeElapsed = (Date.now() - adjustedStart) / 1000;
-                const speedBonus = Math.max(0, 500 * (1 - (timeElapsed / timeLimit)));
-                const potential = Math.floor(500 + speedBonus);
-                const el1 = document.getElementById('player-potential-points');
-                const el2 = document.getElementById('player-dash-potential-points');
-                if (el1) el1.innerText = potential;
-                if (el2) el2.innerText = potential;
-            }).catch(() => {});
-        }
+        if (syncedPlayerQuestionPaused) return;
+        const timeElapsed = Math.max(0, (Date.now() - syncedPlayerQuestionStartTime) / 1000);
+        const speedBonus = Math.max(0, 500 * (1 - (timeElapsed / syncedPlayerQuestionTimeLimit)));
+        const potential = Math.max(500, Math.floor(500 + speedBonus));
+        const el1 = document.getElementById('player-potential-points');
+        const el2 = document.getElementById('player-dash-potential-points');
+        if (el1) el1.innerText = potential;
+        if (el2) el2.innerText = potential;
     };
     updateTicker();
-    pointsDecayInterval = setInterval(updateTicker, 200);
+    pointsDecayInterval = setInterval(updateTicker, 100);
 }
 
 let isTimeFrozenLocal = false;
@@ -3645,6 +3644,12 @@ function initApp() {
 
             if (d.state === 'question') {
                 const q = d.questions[d.currentQuestionIndex];
+                syncedPlayerQuestionPaused = Boolean(d.isPaused);
+                syncedPlayerQuestionStartTime = Number(d.questionStartTime) || Date.now();
+                syncedPlayerQuestionTimeLimit = Math.max(
+                    1,
+                    Number(q.timeLimit || q.dashboardData?.timeLimit) || 20
+                );
                 // Guard: skip re-initialization if same question already set up
                 const isNewQuestion = d.currentQuestionIndex !== lastInitializedQuestionIndex;
                 if (isNewQuestion) {
