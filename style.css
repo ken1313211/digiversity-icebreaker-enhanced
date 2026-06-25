@@ -2347,6 +2347,25 @@ body.sandbox-active #app-container {
     cursor: pointer;
 }
 .debuff-card p { margin: 0.35rem 0 0; font-size: 0.78rem; }
+.debuff-clear-all-btn {
+    display: block;
+    width: 100%;
+    padding: 0.5rem;
+    background: rgba(220, 38, 38, 0.85);
+    border: 2px solid #fca5a5;
+    border-radius: 10px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    pointer-events: auto;
+    text-align: center;
+    transition: background 0.2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.debuff-clear-all-btn:hover {
+    background: rgba(185, 28, 28, 0.95);
+}
 .sabotage-redacted .player-question-card h2 {
     color: transparent !important;
     text-shadow: 0 0 11px rgba(255,255,255,0.95);

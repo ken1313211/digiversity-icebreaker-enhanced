@@ -1241,12 +1241,37 @@ function showPersistentDebuffNotification({ typeName, attackerName, attackerTeam
     const clearButton = document.createElement('button');
     clearButton.type = 'button';
     clearButton.textContent = 'Clear';
-    clearButton.addEventListener('click', () => card.remove());
+    clearButton.addEventListener('click', () => {
+        card.remove();
+        updateDebuffClearAllButton(stack);
+    });
     const details = document.createElement('p');
     details.textContent = howToClear;
     header.append(title, clearButton);
     card.append(header, details);
     stack.prepend(card);
+    updateDebuffClearAllButton(stack);
+}
+
+function updateDebuffClearAllButton(stack) {
+    if (!stack) return;
+    let clearAllBtn = stack.querySelector('.debuff-clear-all-btn');
+    const cardCount = stack.querySelectorAll('.debuff-card').length;
+
+    if (cardCount >= 2) {
+        if (!clearAllBtn) {
+            clearAllBtn = document.createElement('button');
+            clearAllBtn.className = 'debuff-clear-all-btn';
+            clearAllBtn.textContent = '✕ Clear All';
+            clearAllBtn.addEventListener('click', () => {
+                stack.querySelectorAll('.debuff-card').forEach(c => c.remove());
+                clearAllBtn.remove();
+            });
+            stack.appendChild(clearAllBtn);
+        }
+    } else if (clearAllBtn) {
+        clearAllBtn.remove();
+    }
 }
 
 function clearSabotageEffectsForNextQuestion() {
