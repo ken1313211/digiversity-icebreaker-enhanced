@@ -1,0 +1,82 @@
+<style>
+#arena-concepts{--yellow:#ffe600;--charcoal:#2e2e38;--deep:#1a1a24;--white:#fff;color:var(--white);font:16px/1.45 Arial,sans-serif;color-scheme:dark}
+#arena-concepts *{box-sizing:border-box}
+#arena-concepts .game{background:var(--deep);padding:24px;border-top:5px solid var(--yellow);overflow:hidden}
+#arena-concepts .hud{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+#arena-concepts .brand{font-size:15px;font-weight:800;letter-spacing:2px;color:var(--yellow)}
+#arena-concepts .stats{display:flex;gap:24px;font-size:13px;color:#c4c4cd}
+#arena-concepts .stats strong{display:block;font-size:23px;color:var(--white);font-variant-numeric:tabular-nums}
+#arena-concepts .track{height:5px;background:var(--charcoal);margin-top:24px}
+#arena-concepts .track span{display:block;width:100%;height:100%;background:var(--yellow);transition:width 1s linear}
+#arena-concepts .stage{text-align:center;padding:28px 12px 32px;background:radial-gradient(ellipse at center,#35353e,var(--deep) 72%)}
+#arena-concepts .eyebrow{font-size:12px;letter-spacing:2px;color:#c4c4cd;text-transform:uppercase}
+#arena-concepts .clock{width:76px;height:76px;display:grid;place-items:center;margin:16px auto;border:4px solid var(--yellow);border-radius:50%;font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
+#arena-concepts h2{font-size:clamp(26px,5vw,38px);line-height:1.15;max-width:580px;margin:14px auto 16px;letter-spacing:-1px}
+#arena-concepts .reward{color:var(--yellow);font-size:13px;font-weight:700}
+#arena-concepts .answers{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#arena-concepts button{font:inherit;cursor:pointer;min-height:44px}
+#arena-concepts .answer{display:flex;align-items:center;gap:16px;text-align:left;padding:22px 18px;min-height:94px;border:1px solid #666670;border-bottom:5px solid #55555f;border-radius:12px;background:var(--charcoal);color:var(--white);font-size:18px;font-weight:700;transition:transform 140ms,background 140ms}
+#arena-concepts .answer:not(:disabled):hover{transform:translateY(-3px);border-color:var(--yellow)}
+#arena-concepts .answer:not(:disabled):active{transform:translateY(2px)}
+#arena-concepts .key{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;background:var(--deep);color:var(--yellow);border-radius:8px;font-size:15px}
+#arena-concepts .answer.correct{background:var(--yellow);color:var(--deep);border-color:var(--yellow)}
+#arena-concepts .answer.wrong{border-color:var(--white);text-decoration:line-through}
+#arena-concepts .answer:disabled{cursor:default}
+#arena-concepts .feedback{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:22px;min-height:50px}
+#arena-concepts #result{font-weight:700;color:var(--yellow)}
+#arena-concepts .replay{padding:10px 16px;background:transparent;color:var(--white);border:1px solid #777781;border-radius:8px}
+#arena-concepts .footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#c4c4cd;font-size:12px;padding-top:20px;margin-top:20px;border-top:1px solid #44444e}
+#arena-concepts[data-style="angular"] .answer{border-radius:0;border-left:5px solid var(--yellow)}
+#arena-concepts[data-style="angular"] .clock{border-radius:0;transform:rotate(-4deg)}
+@media(max-width:440px){#arena-concepts .game{padding:16px}#arena-concepts .answers{grid-template-columns:1fr}#arena-concepts .answer{min-height:70px;padding:14px}#arena-concepts .stats{gap:16px}}
+@media(prefers-reduced-motion:reduce){#arena-concepts .answer,#arena-concepts .track span{transition:none}}
+</style>
+<div id="arena-concepts" aria-label="EY quiz game concept">
+ <div class="game">
+  <header class="hud"><div class="brand">DIGIVERSITY<br>DASHBOARD WARS</div><div class="stats"><span>SCORE<strong id="score">2,450</strong></span><span>RANK<strong>#4</strong></span><span>STREAK<strong id="streak">3x</strong></span></div></header>
+  <div class="track" aria-hidden="true"><span id="timebar"></span></div>
+  <section class="stage">
+   <div class="eyebrow">Power BI / Round 04 of 10</div>
+   <div class="clock" id="clock" aria-label="20 seconds remaining">20</div>
+   <h2>Which DAX function adds values across a column?</h2>
+   <div class="reward">1,000 POINTS UP FOR GRABS</div>
+  </section>
+  <div class="answers" aria-label="Choose your answer">
+   <button class="answer" data-answer="0"><span class="key">A</span>COUNT()</button>
+   <button class="answer" data-answer="1"><span class="key">B</span>SUM()</button>
+   <button class="answer" data-answer="2"><span class="key">C</span>FILTER()</button>
+   <button class="answer" data-answer="3"><span class="key">D</span>RELATED()</button>
+  </div>
+  <div class="feedback"><span id="result" role="status">Pick an answer to play.</span><button class="replay" id="replay">Start timed round</button></div>
+  <footer class="footer"><span>PLAYER VIEW / INTERACTIVE CONCEPT</span><span>EY YELLOW / CHARCOAL / WHITE</span></footer>
+ </div>
+</div>
+<script>
+(() => {
+ const root=document.getElementById('arena-concepts');
+ const buttons=[...root.querySelectorAll('[data-answer]')];
+ const result=root.querySelector('#result'),clock=root.querySelector('#clock'),bar=root.querySelector('#timebar');
+ const state={style:'rounded',motion:true};
+ let timer=null,remaining=20,answered=false;
+ function pop(el){if(state.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)el.animate([{transform:'scale(.92)'},{transform:'scale(1.04)',offset:.65},{transform:'scale(1)'}],{duration:340,easing:'ease-out'});}
+ function finish(answer){
+  if(answered)return;answered=true;clearInterval(timer);
+  buttons.forEach(b=>b.disabled=true);buttons[1].classList.add('correct');
+  if(answer===1){result.textContent='CORRECT! +1,000 points';root.querySelector('#score').textContent='3,450';root.querySelector('#streak').textContent='4x';pop(root.querySelector('#score'));}
+  else {if(answer!==null)buttons[answer].classList.add('wrong');result.textContent=answer===null?'Time is up. The answer is SUM().':'The answer is SUM(). Next round is yours.';root.querySelector('#streak').textContent='0x';}
+  pop(buttons[1]);root.querySelector('#replay').textContent='Play again';
+ }
+ buttons.forEach(b=>b.onclick=()=>finish(Number(b.dataset.answer)));
+ root.querySelector('#replay').onclick=()=>{
+  clearInterval(timer);remaining=20;answered=false;
+  buttons.forEach(b=>{b.disabled=false;b.classList.remove('correct','wrong');});
+  root.querySelector('#score').textContent='2,450';root.querySelector('#streak').textContent='3x';
+  result.textContent='Make it count. Choose your answer!';clock.textContent='20';clock.setAttribute('aria-label','20 seconds remaining');bar.style.width='100%';
+  root.querySelector('#replay').textContent='Restart round';pop(clock);
+  timer=setInterval(()=>{remaining--;clock.textContent=remaining;clock.setAttribute('aria-label',remaining+' seconds remaining');bar.style.width=(remaining/20*100)+'%';if(!remaining)finish(null);},1000);
+ };
+ function render(){root.dataset.style=state.style;}
+ render();
+ if(globalThis.Tweak){const tweak=new Tweak({container:root,onChange:render});tweak.addSelect(state,'style',{label:'Game treatment',options:[{label:'Arcade tiles',value:'rounded'},{label:'Angular arena',value:'angular'}]});tweak.addToggle(state,'motion',{label:'Score and answer animations'});}
+})();
+</script>
