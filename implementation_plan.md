@@ -1,85 +1,59 @@
-# Implementation Plan - Advanced Dashboard Wars with Presenter Sandbox Mode
+# Digiversity game redesign plan
 
-This plan details the implementation of a 2-round **Practice Arena (Tutorial Mode)**, new dashboard components (KPI Grid, Polar Area Chart), real-time power-ups (Blur, Shake, Glitch, Emoji Flood pop, Shield), player gamification (potential points timer, receipts, scoreboard shifts), an **Upgraded Question Maker**, and a **🧪 Presenter Sandbox Mode** for easy, single-person demos.
+## Implementation status
 
----
+The EY-colored phone and projector UI, power deck, targeting sheet, answer and result states, event animations, and responsive dashboard layout are implemented in the live game. Local join, presence, attack, and buff regressions pass, and the 320 px phone and projector previews were inspected in a browser. A real host plus multiple-device Firebase playthrough is still needed to verify network behavior under a full audience load.
 
-## User Review Required
+## Goal
 
-### 1. Presenter Sandbox Mode (Split-Screen Simulator) 🧪
-To allow a single presenter (or two people) to demo the game to managers without needing multiple physical phones:
-* **Host Sandbox Toggle**: A prominent "🧪 Live Demo Sandbox" button is added to the Host Setup Dashboard.
-* **Split-Screen Interface**: Clicking it divides the desktop view:
-  * **Left Column (70%)**: The standard Host Projector View (lobby, charts, results, leaderboard).
-  * **Right Column (30%)**: A live, interactive **Player Phone Web Simulator** that connects directly to the game session, allowing you to play the game in the same browser tab.
-* **Simulation Control Panel**: An admin drawer next to the phone simulator with quick actions:
-  * `🤖 Spawn 3 Bot Players`: Instantly writes 3 bot players (`Bot Red`, `Bot Blue`, `Bot Gold`) into the lobby.
-  * `⚡ Auto-Answer Bots`: Triggers all bots to answer the current question with randomized accuracy and response times (so the results bars and scoreboard update automatically).
-  * `🌫️ Trigger Blur Attack on Simulator`: Simulates a bot attacking the simulator player with a Foggy Window (blurring the simulator chart).
-  * `📳 Trigger Earthquake Attack on Simulator`: Simulates a bot attacking the simulator player with a Dashboard Earthquake (shaking the simulator).
-  * `🤪 Trigger Emoji Flood on Simulator`: Simulates a bot attacking the simulator player with an Emoji Flood, spawning 8 bouncing emojis to clear.
-  * `🛡️ Trigger Attack on Shielded Bot`: Shows a bot blocking an attack on the projector screen.
+Make the existing live quiz feel like a fast, polished game on the projector and on each player's phone. Keep the current question types, Firebase sessions, team play, scoring, and power mechanics. This is a redesign of the working game, not a new marketing site or a separate concept page.
 
----
+## Design direction
 
-## Proposed Changes
+- Use EY charcoal `#2E2E38`, deep charcoal `#1A1A24`, EY yellow `#FFE600`, and white as the foundation. Use the existing red, blue, green, and yellow answer colors only to identify choices; never rely on color alone.
+- Give the game a distinct visual language: angled highlights, strong typography, high-contrast score and timer displays, tactile controls, and subtle data/grid motifs. Reduce the current mix of glass panels, glow, emojis, and inline styles.
+- Use motion to explain game events: a player joins, an answer locks, points are awarded, a rank changes, or a power lands. Avoid constant decorative animation during questions.
+- Preserve legibility on a projected screen and thumb-friendly controls on a 320–430 px phone. Support keyboard focus and reduced motion.
 
-### [Component 1] UI Layout & CSS Transitions
+## Player journey
 
-#### [MODIFY] [style.css](file:///c:/Users/Administrator/Downloads/digiversity-pbi-icebreaker-main/style.css)
-* Add styling for:
-  * `.sandbox-split-layout` - Encompasses the split-screen view when sandbox is enabled.
-  * `.sandbox-projector-side` - Takes up 70% width, hides standard background animations.
-  * `.sandbox-sidebar` - Takes up 30% width, styled like a mobile frame with neon borders.
-  * `.sandbox-controls` - Control panel buttons.
-  * `.sabotage-blur`, `.sabotage-shake`, `.sabotage-greyout` - Visual debuffs.
-  * `.emoji-bubble-float` - Bouncing/floating animation for the Emoji Flood items.
-  * `.kpi-grid`, `.kpi-card`, `.hype-meter-container`, `.tutorial-banner`.
+1. **Join and lobby:** Make the PIN form more direct, show connection and team status clearly, and make a successful join feel immediate. In the waiting room, show nickname, team, and a compact how-to-play entry point. A player arriving should briefly animate into the host roster.
+2. **Question screen:** Keep the timer, question, answer choices, points, and powers visible in a clear order. Make answer tiles feel pressable and show a single decisive locked state after selection. Adapt the same shell to multiple choice, dashboard tapping, text, number, poll, and jumbled questions.
+3. **After answering:** Show an immediate answer receipt with points earned, streak, and status while waiting for the host. Keep any applicable power controls available without obscuring the receipt.
+4. **Results and leaderboard:** Reveal the correct answer, score change, rank movement, and next round state as a short sequence. Give the player one clear place to see their standing.
 
-#### [MODIFY] [index.html](file:///c:/Users/Administrator/Downloads/digiversity-pbi-icebreaker-main/index.html)
-* **Add Sandbox Elements**:
-  * Add a "🧪 Live Demo Sandbox" toggle button in the Host Dashboard header.
-  * Create a split-screen viewport wrapper.
-  * Embed a simulator container `#sandbox-phone-simulator` and control container `#sandbox-controls-drawer`.
-* **Expand Emojis**:
-  * Add 🚀, 🥳, 🏆, 🤔, 💻, 💡, 😮 to the `#player-lobby-emoji-bar`.
-  * Add 🥳, 👑, 💥, 💀, 🤩, 😮, 🤔, 💩 to the `#player-emoji-bar`.
-* **Add Power-Up, Tutorial, & KPI UI**:
-  * Insert `<div id="player-powerup-bar" class="powerup-bar hidden">` at the bottom of player views.
-  * Insert `<div id="emoji-flood-overlay" class="emoji-flood-overlay hidden">` for popping debuffs.
-  * Insert `<div id="player-tutorial-hint" class="tutorial-banner hidden"></div>` for real-time tutorial tips.
-  * Insert `<div id="player-kpi-container" class="kpi-grid hidden"></div>` and `#host-kpi-container`.
+## Power-up experience
 
----
+- Replace emoji-only inventory slots with compact, labeled power cards. Each card shows the effect, whether it is ready, queued, active, or spent, and the action it will take.
+- Separate **buffs** (shield, double shield, speed boost, multiplier) from **attacks** (blur, shuffle, glitch, emoji flood, redacted, steal, freeze) through label and icon as well as color.
+- Use a focused target sheet for attacks: player/team name, effect, timing, and one clear **Use power** action. Close the sheet with an explicit queued or launched state. Keep team donation and pooled powers in the same visual system.
+- Give incoming powers a brief named impact cue and a persistent, readable effect indicator with an undo/clear instruction where applicable. Keep answer controls and the timer usable whenever the game rules allow them.
+- Audit the power event path while implementing the UI. The current `executeAttack` writes to `queuedAttacks` even during a question, so the plan includes aligning the actual send timing with the label shown to players. Avoid consuming an item if its attack write fails; prevent duplicate activation from rapid taps.
 
-### [Component 2] Javascript Engines
+## Host and projector journey
 
-#### [MODIFY] [dashboard-engine.js](file:///c:/Users/Administrator/Downloads/digiversity-pbi-icebreaker-main/dashboard-engine.js)
-* Add `polarArea` and `kpi` to scenario components.
-* Introduce `isDoublePoints` (25%) and `isPowerDrop` (25%) rounds in generated challenges.
-* Add presets for auto-populating custom quizzes.
-* Export tutorial rounds.
+- **Lobby:** Make the PIN and QR code the focal point, with a readable online player count, joined/offline summary, team setup, and roster. Animate roster changes once rather than continuously.
+- **Question:** Establish a strong question hierarchy with the timer and answer progress visible from across a room. Give the host controls a separate area so players do not mistake them for game content.
+- **Results:** Use answer reveals and chart/bar growth tied to real response counts. Keep labels and exact numbers visible.
+- **Leaderboard:** Give rank changes a short, understandable transition. Keep team scores, hype, and special events present without crowding the ranking.
+- The presenter sandbox should reuse the final phone layout so it remains a faithful preview.
 
-#### [MODIFY] [app.js](file:///c:/Users/Administrator/Downloads/digiversity-pbi-icebreaker-main/app.js)
-* **Implement Presenter Sandbox**:
-  * Implement `toggleSandboxMode(enabled)`.
-  * If enabled, initialize a local "Simulator Player" that mirrors all player view transitions and communicates with Firebase under a test player ID.
-  * Render a floating control panel on the right sidebar.
-  * Wire Bot Spawner: `spawnBotPlayers(count)`.
-  * Wire Bot Auto-Answer: `autoAnswerBots()`.
-  * Wire Simulated Attacks: Push corresponding event to `attacks` node targeting the Simulator Player.
-* **Upgraded Question Maker**:
-  * Add collapsibility, question reordering, and data auto-population.
-* **Fix Duplicate Join**:
-  * Disable the join button inside the form submit listener. Check for unique nicknames (case-insensitive). Re-enable on error.
-* **Lobby Hype Meter**:
-  * Update `sessions/${pin}/hypeScore` when lobby emojis are clicked. Draw the bar on the host lobby.
-* **Perform Sabotages & Block with Shield**:
-  * Track and resolve attacks inside the `sessions/${pin}/attacks` Firebase listener.
-  * If hit by Emoji Flood, spawn 8 clickable emoji bubbles. Target must click each to pop them.
-* **Potential Points & Receipt**:
-  * Animate decaying points on player view. Render receipt on results screen.
-* **Rank shifts**:
-  * Save previous rank as `prevRank` on round start. Render shift indicators on host scoreboard.
-* **KPI Card Renderer**:
-  * Implement `renderPlayerKpis()` and `renderHostKpis()` showing interactive metric grids.
+## Implementation sequence
+
+1. **Inventory and structure:** Identify the shared elements in `index.html`, `style.css`, and `app.js`; consolidate repeated player and host UI patterns. Record visual states for lobby, active question, answered, results, and power effects before replacing styles.
+2. **Foundation:** Add reusable design tokens and components in `style.css`, remove conflicting late overrides, and apply the new typography, spacing, buttons, focus states, and responsive rules.
+3. **Phone screens:** Update join, lobby, classic question, dashboard question, waiting, results, and leaderboard markup and rendering. Preserve existing element IDs used by game logic or update their references together.
+4. **Powers:** Rebuild inventory and target selection, then wire status feedback to the real Firebase lifecycle. Review queued and live attack behavior, shield blocks, effect cleanup, donation, and team pools.
+5. **Projector screens:** Update lobby, question, results, and leaderboard. Use the same event and color language as the phone screens.
+6. **Motion and polish:** Add short event-driven transitions, cap particles and effects on lower-powered phones, and provide a complete `prefers-reduced-motion` path. Remove obsolete CSS and dead presentation code.
+
+## Validation
+
+- Test a full game with host plus multiple phones: joins, reconnects, online count, several question types, scoring, results, and next round transitions.
+- Test each power as sender and recipient, including shielded targets, queued attacks, failed writes, and team pool use.
+- Check 320 px, 390 px, tablet, and projector layouts; ensure no clipped controls or hidden question content. Check keyboard use, contrast, and reduced motion.
+- Run the existing join and presence regressions, JavaScript syntax checks, and browser smoke checks after each functional stage.
+
+## Done when
+
+The projector and phone views read as one EY-branded game; players can answer and use powers without guessing their state; host controls remain clear; every existing question type and game feature still works; and the full multiplayer flow passes the checks above.
